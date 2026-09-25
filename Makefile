@@ -19,6 +19,12 @@ OBJCOPY := avr-objcopy
 SIZE := avr-size
 AVRDUDE := avrdude
 
+ifeq ($(OS),Windows_NT)
+RM := cmd.exe /c del /q
+else
+RM := rm -f
+endif
+
 LOCAL_CSRCS := \
   src/main.c \
   src/demo_objects.c \
@@ -104,9 +110,15 @@ install: $(TARGET).hex
 	$(AVRDUDE) -c $(AVRDUDE_PROGRAMMER) -p $(AVRDUDE_MCU) \
 	  -P $(AVRDUDE_PORT) -U flash:w:$(TARGET).hex
 
+ifeq ($(OS),Windows_NT)
 clean:
-	-rm -f $(COBJS) $(TARGET).elf $(TARGET).hex $(TARGET).map
-	-rm -f $(COBJS:.o=.d)
+	-$(RM) $(subst /,\\,$(COBJS)) $(TARGET).elf $(TARGET).hex $(TARGET).map
+	-$(RM) $(subst /,\\,$(COBJS:.o=.d))
+else
+clean:
+	-$(RM) $(COBJS) $(TARGET).elf $(TARGET).hex $(TARGET).map
+	-$(RM) $(COBJS:.o=.d)
+endif
 
 -include $(COBJS:.o=.d)
 
