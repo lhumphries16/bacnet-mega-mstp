@@ -1,0 +1,15 @@
+# Generated AVR outputs
+firmware/mega_mstp/**/*.o
+firmware/mega_mstp/**/*.d
+firmware/mega_mstp/*.elf
+firmware/mega_mstp/*.hex
+firmware/mega_mstp/*.map
+
+# Local upstream checkout fetched by the bootstrap script
+firmware/vendor/
+
+# Editor and OS files
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
