@@ -15,6 +15,7 @@
 #include "bacnet/basic/object/bv.h"
 
 extern bool Send_I_Am_Flag;
+extern void Mega2560_Device_Model_Name_Init(void);
 
 enum {
     DEVICE_INSTANCE = 1234,
@@ -34,6 +35,7 @@ int main(void)
     Analog_Value_Init();
     Binary_Value_Init();
     Device_Set_Object_Instance_Number(DEVICE_INSTANCE);
+    Mega2560_Device_Model_Name_Init();
     Analog_Value_Present_Value_Set(1, 0.0f, 0);
     Binary_Value_Present_Value_Set(1, BINARY_INACTIVE);
 
