@@ -1,27 +1,20 @@
 # Source provenance and attribution
 
-This standalone target was extracted from the physical BACnet MS/TP work in the private CTRL Scout repository:
+This repository combines:
 
-- Source repository: `lhumphries16/CTRL_Scout`
-- Source path: `firmware/mega_mstp/`
-- Extraction target: `lhumphries16/bacnet-mega-mstp`
+- local ATmega2560 platform code in src/;
+- a small in-memory BACnet demonstration application;
+- source files fetched unchanged from the pinned bacnet-stack checkout.
 
-The firmware is built against the official `bacnet-stack` source fetched by
-`firmware/bootstrap_bacnet_stack.ps1`. The bootstrap script pins the checkout
-to revision:
+The upstream bacnet-stack source is not committed here. The bootstrap scripts
+fetch it into vendor/bacnet-stack and verify BACNET_STACK_REVISION before a
+build is allowed to proceed.
 
-`6bfb0108d4d68835fd0c1062731b54f559cb1375`
+The upstream source carries its own copyright and license notices. The fetched
+checkout is authoritative for those notices; preserve its license directory
+when redistributing a build. The upstream stack includes components under more
+than one license, so review the pinned checkout before commercial
+redistribution.
 
-No upstream `bacnet-stack` files are committed in this repository, and no
-upstream pull request is part of this deliverable. The `port/` sources are
-target-specific reductions/adaptations used to compile the Mega application
-against the pinned stack.
-
-The fetched upstream repository remains the authoritative source for its
-copyright, license, and attribution notices. Do not remove those notices from
-the local checkout when redistributing or packaging the build. Review the
-upstream repository's current licensing terms for the pinned revision before
-commercial redistribution.
-
-CTRL Scout application code, the Python semantic runtime, the web UI, the .NET
-MS/TP sidecar, recipes, and equipment profiles are intentionally excluded.
+The local code is intended as a platform reference and laboratory example. It
+is not presented as an upstream bacnet-stack implementation.

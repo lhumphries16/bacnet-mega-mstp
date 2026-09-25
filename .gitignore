@@ -1,14 +1,16 @@
-# Generated AVR outputs
-firmware/mega_mstp/**/*.o
-firmware/mega_mstp/**/*.d
-firmware/mega_mstp/*.elf
-firmware/mega_mstp/*.hex
-firmware/mega_mstp/*.map
+# Generated build outputs
+*.o
+*.d
+*.elf
+*.hex
+*.map
+*.lst
+*.eep
 
-# Local upstream checkout fetched by the bootstrap script
-firmware/vendor/
+# Fetched upstream dependency
+vendor/
 
-# Editor and OS files
+# Editor and operating-system files
 .vscode/
 .idea/
 .DS_Store

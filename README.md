@@ -1,12 +1,76 @@
-# BACnet Mega MS/TP
+# BACnet MS/TP on Arduino Mega 2560
 
-Standalone BACnet MS/TP firmware target for an Arduino Mega 2560, extracted from the CTRL Scout physical bench implementation.
+A small reference target for running the open-source bacnet-stack BACnet MS/TP implementation on an Arduino Mega 2560 / ATmega2560 using USART1 and an external RS-485 transceiver.
 
-This repository is a bench/reference target. It is intended to prove BACnet MS/TP communication with a small fan-array controller; it is not a CAT-rated instrument, a mains-voltage controller, or a production safety device.
+## Why this exists
 
-## What this target exposes
+The purpose of this repository is narrow:
 
-The Mega presents one BACnet MS/TP device:
+> How can the upstream bacnet-stack BACnet MS/TP implementation run on an Arduino Mega 2560 / ATmega2560 through USART1 and an external half-duplex RS-485 transceiver?
+
+The repository isolates the reusable platform delta:
+
+- ATmega2560 build and bootloader settings;
+- USART1 register handling;
+- Arduino Mega pin mapping;
+- RS-485 driver/receiver direction control;
+- a Timer2 millisecond clock;
+- a reproducible upstream dependency;
+- a minimal BACnet device used to exercise the protocol.
+
+This is a reference target, not a new BACnet implementation and not a fork of bacnet-stack.
+
+## Hardware requirements
+
+- Arduino Mega 2560 / ATmega2560 running at 16 MHz;
+- compatible external half-duplex RS-485 transceiver;
+- low-voltage supply appropriate for the Mega and transceiver;
+- BACnet MS/TP trunk and a BACnet client for validation;
+- AVR-GCC, avr-libc, GNU Make, Git, and avrdude.
+
+The transceiver must expose separate receive, transmit, and direction-control signals. Follow the selected transceiver documentation for supply, logic levels, signal naming, and network connection.
+
+## Pin map
+
+| Mega signal | ATmega2560 pin | Transceiver / network |
+| --- | --- | --- |
+| D18 / TX1 | PD3 | DI |
+| D19 / RX1 | PD2 | RO |
+| D2 | PE4 | DE and /RE |
+| GND | GND | GND |
+| 5 V or transceiver-rated supply | VCC | VCC |
+| A / B | RS-485 A / B | MS/TP trunk |
+
+D2 is the only direction-control mapping supported by this reference. The
+source contains compile-time checks that make the PE4 mapping explicit and
+reject an accidental PD2 mapping.
+
+## Architecture
+
+~~~text
+BACnet MS/TP client
+        |
+      RS-485
+        |
+external half-duplex transceiver
+        |
+USART1 + D2 DE/RE
+        |
+ATmega2560
+        |
+bacnet-stack
+        |
+minimal BACnet demonstration device
+~~~
+
+The Mega firmware uses the upstream MS/TP datalink and BACnet service code.
+Local platform code supplies the UART, direction control, millisecond timer,
+and hardware guard. The demonstration values are held in RAM and are not
+connected to physical outputs.
+
+## BACnet demonstration device
+
+The reference starts one BACnet MS/TP device with:
 
 | Setting | Value |
 | --- | --- |
@@ -18,111 +82,94 @@ The Mega presents one BACnet MS/TP device:
 
 | Object | Name | Access | Meaning |
 | --- | --- | --- | --- |
-| BV1 | Remote Start | read/write | Enables the three PWM outputs |
-| AV1 | Remote Speed Command | read/write | Command from 0 to 1000 |
-| AI1 | Fan 1 Current | read-only | INA3221 channel 1, amperes |
-| AI2 | Fan 2 Current | read-only | INA3221 channel 2, amperes |
-| AI3 | Fan 3 Current | read-only | INA3221 channel 3, amperes |
+| BV1 | Demo Enable | read/write | In-memory binary value |
+| AV1 | Demo Value | read/write | In-memory real value |
 
-On boot, Remote Start is inactive, Remote Speed Command is zero, and all PWM outputs are off. AV1 is clamped to 0…1000. The firmware does not measure or infer RPM, airflow, or mechanical health.
+The target is intended to demonstrate Who-Is, I-Am, ReadProperty, and
+WriteProperty for the Device, BV1, and AV1 objects.
 
-## Hardware map
+## Build from the repository root
 
-| Function | Mega connection |
-| --- | --- |
-| RS-485 transceiver DE and /RE | D2 / PE4 |
-| RS-485 transceiver DI | TX1 / D18 / PD3 |
-| RS-485 transceiver RO | RX1 / D19 / PD2 |
-| PWM board channel 1 / Fan 1 | D5 / OC3A |
-| PWM board channel 2 / Fan 2 | D6 / OC4A |
-| PWM board channel 4 / Fan 3 | D7 / OC4B |
-| INA3221 SDA | D20 |
-| INA3221 SCL | D21 |
+The dependency revision is stored once in BACNET_STACK_REVISION.
 
-PWM board channel 3 is intentionally unused because the bench board's channel 3 terminal was defective. D7 drives board channel 4.
+POSIX shell:
 
-The official MS/TP timer is moved to Timer2. PWM uses Timer3 and Timer4, so the MS/TP timer does not share D5, D6, or D7.
-
-## Repository boundary
-
-This repository contains:
-
-- the Mega 2560 application and hardware adapters;
-- the reduced BACnet object implementations needed by this target;
-- the exact upstream-source bootstrap script;
-- build and wiring documentation.
-
-It intentionally does not contain the CTRL Scout Python runtime, web UI, recipe engine, .NET sidecar, or application-specific equipment profiles. Those remain in the Scout repository.
-
-The upstream `bacnet-stack` source is fetched into `firmware/vendor/bacnet-stack` at the exact revision below. It is not copied into this repository and is not modified by the build.
-
-- Repository: https://github.com/bacnet-stack/bacnet-stack
-- Pinned revision: `6bfb0108d4d68835fd0c1062731b54f559cb1375`
-
-The files in `firmware/mega_mstp/port/` are the target-specific, reduced object-table and dispatch adaptations used by this application. The upstream pull request is intentionally deferred; this repository is the standalone deliverable for the Mega target.
-
-## Build and upload
-
-### Prerequisites
-
-Install:
-
-- AVR-GCC and avr-libc;
-- GNU Make;
-- Git;
-- avrdude;
-- PowerShell 5+ or PowerShell 7 for the bootstrap script.
-
-From the repository root on Windows:
-
-```powershell
-powershell -ExecutionPolicy Bypass -File firmware/bootstrap_bacnet_stack.ps1
-Set-Location firmware/mega_mstp
+~~~sh
+./bootstrap_bacnet_stack.sh
 make clean all
-make AVRDUDE_PORT=COM5 install
-```
+~~~
 
-Replace `COM5` with the Mega bootloader port. On Linux/macOS, fetch the same pinned revision into `firmware/vendor/bacnet-stack` manually, then run `make clean all` from `firmware/mega_mstp` and set `AVRDUDE_PORT` to the serial device.
+PowerShell:
 
-Build outputs (`.elf`, `.hex`, `.map`, object files, and dependency files) are generated locally and ignored by Git.
+~~~powershell
+powershell -ExecutionPolicy Bypass -File .\bootstrap_bacnet_stack.ps1
+make clean all
+~~~
 
-## Wiring notes
+The build produces the ELF, HEX, map, and size report. The upstream checkout
+is fetched into vendor/bacnet-stack and remains ignored by Git.
 
-Use a low-voltage bench supply and the appropriate common/reference wiring for the selected RS-485 transceiver and fan/PWM hardware. The firmware does not provide galvanic isolation, CAT measurement protection, or field miswire protection.
+## Flash
 
-For the HW-97-style RS-485 board:
+For an Arduino Mega bootloader connection:
 
-- Mega TX1/D18 → DI;
-- Mega RX1/D19 ← RO;
-- Mega D2 → DE and /RE;
-- connect VCC/GND according to the transceiver board;
-- connect RS-485 A/B to the MS/TP network with polarity verified at the receiving device.
+~~~text
+make AVRDUDE_PORT=COM15 install
+~~~
 
-Connect the INA3221 to Mega I²C (SDA D20, SCL D21). The current conversion assumes a 0.1 Ω shunt in `main.c`; calibrate `INA_SHUNT_OHMS` for the installed breakout before treating readings as meaningful.
+The default programmer is wiring and the default MCU is m2560. Override
+AVRDUDE_PORT, AVRDUDE_PROGRAMMER, or AVRDUDE_MCU when the programming
+connection requires it.
 
-## Verification
+## Validation
 
-The minimum bench verification is:
+Validation is intentionally separated into tiers:
 
-1. Build the firmware and confirm the size report.
-2. Flash the Mega and confirm it starts with all outputs off.
-3. Discover device 1234 from a BACnet MS/TP client.
-4. Read BV1, AV1, and AI1–AI3.
-5. Write AV1 and BV1, then confirm PWM output behavior.
-6. Confirm current values change with the fan load.
-7. Power-cycle the bench and confirm the safe startup state.
+1. Compile tested: the root Makefile completes with the pinned dependency.
+2. Flash tested: the generated image is accepted by the Mega bootloader.
+3. Physical BACnet MS/TP tested: a client discovers device 1234 and completes
+   the ReadProperty and WriteProperty checks listed in docs/validation.md.
 
-The target was originally exercised as part of CTRL Scout's physical bench work. A successful firmware build is not equivalent to electrical, protocol, or field acceptance.
+A tier is not implied by the existence of the code or by an earlier
+application-level bench result.
 
-## Known limitations
+## Relationship to bacnet-stack
 
-- Device instance, MAC, baud, and object inventory are compile-time values.
-- The object set is intentionally small and fan-array-specific.
-- INA3221 communication failure currently leaves the last sampled value in place; a production target should expose explicit sensor quality/fault state.
-- The firmware has no application-level safety supervisor or independent physical RELEASE ALL circuit.
-- The target is for low-voltage laboratory work only.
-- The current implementation has been extracted from the Scout bench target; generalizing the port or proposing upstream changes is a separate task.
+The dependency is fetched from:
 
-## License and attribution
+https://github.com/bacnet-stack/bacnet-stack
 
-See [NOTICE.md](NOTICE.md) for source provenance and attribution. Review the pinned upstream repository's licensing terms before redistributing a build that includes the fetched BACnet stack.
+The exact revision is recorded in BACNET_STACK_REVISION and verified by both
+bootstrap scripts. No upstream source is edited by this repository.
+
+The local source files are intentionally small:
+
+- src/hardware.h: ATmega2560 guard and shared platform include;
+- src/rs485_mega2560.c: USART1 and PE4 direction-control implementation;
+- src/timer_mega2560.c: Timer2 millisecond implementation;
+- src/dlmstp_mega2560.c: include wrapper that supplies the Mega hardware
+  definition to the unchanged upstream MS/TP datalink;
+- src/device_mega2560.c: include wrapper that gives the unchanged upstream
+  Device implementation an accurate model string;
+- src/demo_objects.c: only the two RAM-backed objects required by this
+  demonstration;
+- src/main.c: target configuration and receive loop.
+
+Everything else needed from the upstream ATmega328 reference is compiled from
+the fetched checkout rather than copied into this repository.
+
+## Limitations
+
+- This is a low-voltage laboratory reference, not a certified field product.
+- Electrical isolation, transient protection, network termination, and biasing
+  are outside this repository and depend on the selected hardware.
+- Device instance, MS/TP MAC, baud rate, and Max Master are compile-time
+  settings in the demonstration.
+- The demonstration values are volatile and reset on power-up.
+- No physical output is controlled by BV1 or AV1.
+- The target does not provide a safety supervisor or independent output release
+  circuit.
+
+A small portion of the local target was separated from a larger private
+hardware project; application-specific code was intentionally removed from
+this repository.
