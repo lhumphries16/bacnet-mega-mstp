@@ -6,6 +6,7 @@
 #include <stdint.h>
 #include <avr/interrupt.h>
 #include "rs485.h"
+#include "bacnet/datalink/datalink.h"
 #include "bacnet/datalink/dlmstp.h"
 #include "bacnet/npdu.h"
 #include "bacnet/basic/services.h"

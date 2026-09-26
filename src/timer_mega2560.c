@@ -13,8 +13,8 @@ static volatile unsigned long Millisecond_Counter;
 
 void mstimer_init(void)
 {
-#if defined(PRR1) && defined(PRTIM2)
-    PRR1 &= (uint8_t)~_BV(PRTIM2);
+#if defined(PRR0) && defined(PRTIM2)
+    PRR0 &= (uint8_t)~_BV(PRTIM2);
 #endif
     TCCR2A = 0;
     TCCR2B = _BV(CS22);

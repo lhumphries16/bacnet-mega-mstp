@@ -133,6 +133,11 @@ Validation is intentionally separated into tiers:
 A tier is not implied by the existence of the code or by an earlier
 application-level bench result.
 
+Current bench acceptance record (2026-09-25): compile tested PASS; flash
+tested PASS; physical BACnet MS/TP tested PASS. See
+[`docs/validation.md`](docs/validation.md) for the command and live YABE
+results. This is bench validation only.
+
 ## Relationship to bacnet-stack
 
 The dependency is fetched from:

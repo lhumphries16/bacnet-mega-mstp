@@ -1,6 +1,7 @@
 MCU ?= atmega2560
 AVRDUDE_MCU ?= m2560
 AVRDUDE_PROGRAMMER ?= wiring
+AVRDUDE_BAUD ?= 115200
 ifeq ($(OS),Windows_NT)
 AVRDUDE_PORT ?= COM5
 else
@@ -108,7 +109,8 @@ size: $(TARGET).elf
 
 install: $(TARGET).hex
 	$(AVRDUDE) -c $(AVRDUDE_PROGRAMMER) -p $(AVRDUDE_MCU) \
-	  -P $(AVRDUDE_PORT) -U flash:w:$(TARGET).hex
+	  -P $(AVRDUDE_PORT) -b $(AVRDUDE_BAUD) -D \
+	  -U flash:w:$(TARGET).hex:i
 
 ifeq ($(OS),Windows_NT)
 clean:
